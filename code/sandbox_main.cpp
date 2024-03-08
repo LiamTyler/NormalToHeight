@@ -49,6 +49,11 @@ void BuildDisplacement( const FloatImage2D& dxdyImg, float* h0, float* h1, uint3
                 h += cur[col   + up * width]    + (dxdyImg.GetFloat4( up, col ).y);
                 h += cur[col   + down * width]  - (dxdyImg.GetFloat4( down, col ).y);
 
+                //h += cur[left  + row * width]   + (dxdyImg.GetFloat4( row, left ).x);
+                //h += cur[right + row * width]   - (dxdyImg.GetFloat4( row, col ).x);
+                //h += cur[col   + up * width]    + (dxdyImg.GetFloat4( up, col ).y);
+                //h += cur[col   + down * width]  - (dxdyImg.GetFloat4( row, col ).y);
+
                 next[col + row * width] = h / 4;
             }
         }
@@ -206,9 +211,9 @@ int main( int argc, char** argv )
 
     bool isYDown = false;
     std::string filename;
-    filename = ROOT_DIR "images/rock_wall_10_nor_dx_1k.png"; isYDown = true;
-    //filename = ROOT_DIR "images/test_normals_1_512.png"; isYDown = false;
-    //filename = ROOT_DIR "images/test.png"; isYDown = false;
+    //filename = ROOT_DIR "normal_maps/rock_wall_10_1024.png"; isYDown = true;
+    filename = ROOT_DIR "normal_maps/synthetic_shapes_1_512.png"; isYDown = false;
+    //filename = ROOT_DIR "normal_maps/synthetic_rings_512.png"; isYDown = false;
 
     FloatImage2D normalMap = LoadNormalMap( filename, 1.0f, isYDown );
 
@@ -231,8 +236,8 @@ int main( int argc, char** argv )
         heightMaps[i] = GetHeightMapFromNormalMap( normalMap, iterations[i] );
         LOG( "Finished %ux%u image with %u iterations in %.2f seconds\n", normalMap.width, normalMap.height, iterations[i], PG::Time::GetTimeSince( startTime ) / 1000.0f );
 
-        //std::string heightMapFilename = GetFilenameMinusExtension( filename ) + "_h_" + std::to_string( iterations[i] ) + GetFileExtension( filename );
-        //heightMap.Save( heightMapFilename );
+        std::string heightMapFilename = ROOT_DIR "height_maps/" + GetFilenameStem( filename ) + "_h_" + std::to_string( iterations[i] ) + GetFileExtension( filename );
+        heightMaps[i].image.Save( heightMapFilename );
     }
 
     // combine images into 1 big one for comparison, with a 4 pixel border between
@@ -272,7 +277,7 @@ int main( int argc, char** argv )
             }
         }
     }
-    std::string combinedName = GetFilenameMinusExtension( filename ) + "_heights.png";
+    std::string combinedName = ROOT_DIR "height_maps/" + GetFilenameStem( filename ) + "_heights.png";
     combinedImage.Save( combinedName );
 
     Logger_Shutdown();
