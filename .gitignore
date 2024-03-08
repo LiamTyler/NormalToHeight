@@ -1,4 +1,6 @@
-dxdy.exr
+*.exr
+normal_maps/*_autogen/*
+normal_maps/rock_wall_10_1024_8bit.png
 height_maps/
 /build*/
 *.swp

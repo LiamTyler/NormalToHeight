@@ -31,4 +31,25 @@ make -j
 ```
 
 ## Usage
-TODO (no command line interface yet, just hard coded paths and such)
+```
+NormalToHeight [options] PATH_TO_NORMAL_MAP
+Will generate height map(s) and will create and output them in a directory called '[PATH_TO_NORMAL_MAP]__autogen/'
+Note: this tool expects the normal map to have +Y pointed down. If it's not, use the --flipY option
+
+Options
+  -f, --flipY           Flip the Y direction on the normal map when loading it
+  -g, --genNormalMap    Generate the normal map from the generated height map to compare to the original
+  -h, --help            Print this message and exit
+  -i, --iterations=N    How many iterations to use while generating the height map. Default is 1024
+  -r, --range           If specified, will output several images, with a range of iterations (ignoring the -i command).
+                        This can take a long time, especially for large images. Suggested on 1024 or smaller images
+  -s, --slopeScale=X    How much to scale the normals by, before generating the height map. Default is 1.0
+```
+
+Please use `NormalToHeight --help` for the latest usage
+
+
+## Credits for the source normal maps:
+rock_wall_10: https://polyhaven.com/a/rock_wall_10
+synthetic_rings: https://cpetry.github.io/NormalMap-Online/
+synthetic_shapes_1: https://dreamlight.com/how-to-create-normal-maps-from-photographs/

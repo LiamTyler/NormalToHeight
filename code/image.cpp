@@ -390,6 +390,10 @@ double FloatImageMSE( const FloatImage2D& img1, const FloatImage2D& img2, uint32
     double mse = 0;
     for ( uint32_t pixelIdx = 0; pixelIdx < width * height; ++pixelIdx )
     {
+        if ( pixelIdx == 350 * img1.width + 334 )
+        {
+            printf( "" );
+        }
         for ( uint32_t chan = 0; chan < numChannels; ++chan )
         {
             if ( channelsToCalc & ( 1 << ( 3 - chan ) ) )
@@ -415,3 +419,75 @@ double FloatImageMSE( const FloatImage2D& img1, const FloatImage2D& img2, uint32
 }
 
 double MSEToPSNR( double mse, double maxValue ) { return 10.0 * log10( maxValue * maxValue / mse ); }
+
+
+static vec3 UnpackNormal_8Bit( const uint8_t* v )
+{
+    float x = (v[0] - 128) / 127.0f;
+    float y = (v[1] - 128) / 127.0f;
+    float z = (v[2] - 128) / 127.0f;
+    return Normalize( vec3( x, y, z ) );
+}
+
+static vec3 UnpackNormal_16Bit( const uint16_t* v )
+{
+    float x = (v[0] - 32768) / 32767.0f;
+    float y = (v[1] - 32768) / 32767.0f;
+    float z = (v[2] - 32768) / 32767.0f;
+    return Normalize( vec3( x, y, z ) );
+}
+
+static vec3 UnpackNormal_32Bit( const vec3& v )
+{
+    return Normalize( 2.0f * v - vec3( 1.0f ) );
+}
+
+static vec3 ScaleNormal( vec3 n, float scale )
+{
+    n.x *= scale;
+    n.y *= scale;
+
+    return Normalize( n );
+}
+
+// Unpack the normals such that the error on neutral normals is 0, at the cost of higher error elsewhere
+// http://www.aclockworkberry.com/normal-unpacking-quantization-errors/
+FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool isYDown )
+{
+    RawImage2D rawImg;
+    if ( !rawImg.Load( filename ) )
+        return {};
+
+    FloatImage2D normalMap;
+    if ( IsFormat16BitFloat( rawImg.format ) || IsFormat32BitFloat( rawImg.format ) )
+    {
+        normalMap = FloatImageFromRawImage2D( rawImg );
+        for ( uint32_t i = 0; i < normalMap.width * normalMap.height; ++i )
+        {
+            vec3 normal = UnpackNormal_32Bit( vec3( normalMap.GetFloat4( i ) ) );
+            if ( !isYDown )
+                normal.y *= -1;
+            normal = ScaleNormal( normal, slopeScale );
+            normalMap.SetFromFloat4( i, vec4( normal, 0 ) );
+        }
+    }
+    else
+    {
+        normalMap = FloatImage2D( rawImg.width, rawImg.height, 3 );
+        for ( uint32_t i = 0; i < normalMap.width * normalMap.height; ++i )
+        {
+            vec3 normal;
+            if ( IsFormat8BitUnorm( rawImg.format ) )
+                normal = UnpackNormal_8Bit( rawImg.Raw<uint8_t>() + i * rawImg.NumChannels() );
+            else
+                normal = UnpackNormal_16Bit( rawImg.Raw<uint16_t>() + i * rawImg.NumChannels() );
+
+            if ( !isYDown )
+                normal.y *= -1;
+            normal = ScaleNormal( normal, slopeScale );
+            normalMap.SetFromFloat4( i, vec4( normal, 0 ) );
+        }
+    }
+
+    return normalMap;
+}

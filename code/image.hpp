@@ -240,6 +240,8 @@ struct FloatImage2D
     {
         return data[(row * width + col) * numChannels];
     }
+
+    operator bool() const { return width && height && numChannels && data != nullptr; }
 };
 
 
@@ -265,3 +267,5 @@ std::vector<FloatImage2D> GenerateMipmaps( const FloatImage2D& floatImage, const
 uint32_t CalculateNumMips( uint32_t width, uint32_t height );
 double FloatImageMSE( const FloatImage2D& img1, const FloatImage2D& img2, uint32_t channelsToCalc = 0b1111 );
 double MSEToPSNR( double mse, double maxValue = 1.0 );
+
+FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool isYDown );

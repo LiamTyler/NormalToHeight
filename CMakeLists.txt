@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.7.2)
-project(Normal2Height)
+project(NormalToHeight)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(helpful_functions)
@@ -12,7 +12,7 @@ configure_file(${ROOT_DIR}/cmake/platform_defines.hpp.in ${ROOT_DIR}/code/shared
 find_package(OpenMP REQUIRED)
 
 set(SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/code/sandbox_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/code/main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/code/image.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/code/image.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/code/image_load.cpp
@@ -24,6 +24,8 @@ set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/code/shared)
 set(
 	EXTERNALS
 	
+	${EXT_DIR}/getopt/getopt.c
+    ${EXT_DIR}/getopt/getopt.h
     ${EXT_DIR}/stb/stb_image.h
     ${EXT_DIR}/stb/stb_image_write.h
     ${EXT_DIR}/stb/stb_image_resize.h
