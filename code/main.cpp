@@ -9,7 +9,7 @@
 struct Options
 {
     std::string normalMapPath;
-    uint32_t numIterations = 1024;
+    uint32_t numIterations = 64;
     float slopeScale = 1.0f;
     bool flipY = false;
     bool outputGenNormals = false;
@@ -42,6 +42,8 @@ static uint32_t Wrap( int v, int maxVal )
     else return v;
 }
 
+#define DIAGONALS 0
+
 void BuildDisplacement( const FloatImage2D& dxdyImg, float* h0, float* h1, uint32_t numIterations, float iterationMultiplier )
 {
     int width = (int)dxdyImg.width;
@@ -53,6 +55,14 @@ void BuildDisplacement( const FloatImage2D& dxdyImg, float* h0, float* h1, uint3
     else
     {
         FloatImage2D halfDxDyImg = dxdyImg.Resize( width / 2, height / 2 );
+        float scaleX = width / static_cast<float>( width / 2 );
+        float scaleY = height / static_cast<float>( height / 2 );
+        // update the 'rcpSize' from the original 'DxDyFromNormal( normal ) * rcpSize'
+        halfDxDyImg.ForEachPixel( [&]( float* p )
+            {
+                p[0] *= scaleX;
+                p[1] *= scaleY;
+            });
 
         BuildDisplacement( halfDxDyImg, h0, h1, numIterations, 2 * iterationMultiplier );
 
@@ -78,25 +88,31 @@ void BuildDisplacement( const FloatImage2D& dxdyImg, float* h0, float* h1, uint3
             {
                 uint32_t left = Wrap( col - 1, width );
                 uint32_t right = Wrap( col + 1, width );
-                //vec2 currDxDy = vec2( dxdyImg.GetFloat4( row, col ) );
-
+                
                 float h = 0;
-                h += cur[left  + row * width]   + (dxdyImg.GetFloat4( row, left ).x);
-                h += cur[right + row * width]   - (dxdyImg.GetFloat4( row, right ).x);
-                h += cur[col   + up * width]    + (dxdyImg.GetFloat4( up, col ).y);
-                h += cur[col   + down * width]  - (dxdyImg.GetFloat4( down, col ).y);
+                h += cur[left  + row * width]   + 0.5f * (dxdyImg.GetFloat4( row, left ).x);
+                h += cur[right + row * width]   - 0.5f * (dxdyImg.GetFloat4( row, right ).x);
+                h += cur[col   + up * width]    + 0.5f * (dxdyImg.GetFloat4( up, col ).y);
+                h += cur[col   + down * width]  - 0.5f * (dxdyImg.GetFloat4( down, col ).y);
+#if DIAGONALS
+                const float S = 1.0f; //sqrt( 2.0f ) / 2.0f;
+                vec2 UL = dxdyImg.GetFloat4( up, left );
+                vec2 UR = dxdyImg.GetFloat4( up, right );
+                vec2 DL = dxdyImg.GetFloat4( down, left );
+                vec2 DR = dxdyImg.GetFloat4( down, right );
+                h += S * (cur[left  + up * width]    + 0.5f * (UL.x  + UL.y));
+                h += S * (cur[right + up * width]    + 0.5f * (-UR.x + UR.y));
+                h += S * (cur[left  + down * width]  + 0.5f * (DL.x  - DL.y));
+                h += S * (cur[right + down * width]  - 0.5f * (DR.x  + DR.y));
 
-                //h += cur[left  + row * width]   + (dxdyImg.GetFloat4( row, left ).x);
-                //h += cur[right + row * width]   - (dxdyImg.GetFloat4( row, col ).x);
-                //h += cur[col   + up * width]    + (dxdyImg.GetFloat4( up, col ).y);
-                //h += cur[col   + down * width]  - (dxdyImg.GetFloat4( row, col ).y);
-
+                next[col + row * width] = h / (4.0f + 4.0f * S);
+#else
                 next[col + row * width] = h / 4;
+#endif // DIAGONALS
             }
         }
         std::swap( cur, next );
     }
-    //LOG( "Iterated on %u x %u", width, height );
 }
 
 vec2 DxDyFromNormal( vec3 normal )
@@ -173,6 +189,11 @@ GenerationResults GetHeightMapFromNormalMap( const FloatImage2D& normalMap, uint
     FloatImage2D dxdyImg2 = FloatImage2D( normalMap.width, normalMap.height, 3 );
     for ( uint32_t i = 0; i < normalMap.width * normalMap.height; ++i )
     {
+        if ( i == (183 * normalMap.width + 183) )
+        {
+            printf( "" );
+        }
+        vec3 normal = vec3( normalMap.GetFloat4( i ) );
         dxdyImg2.SetFromFloat4( i, vec4( DxDyFromNormal( normal ), 0, 0 ) );
     }
     dxdyImg2.Save( ROOT_DIR "dxdy.exr", ImageSaveFlags::KEEP_FLOATS_AS_32_BIT );
@@ -207,7 +228,7 @@ GenerationResults GetHeightMapFromNormalMap( const FloatImage2D& normalMap, uint
     returnData.minH = minH;
     returnData.maxH = maxH;
     returnData.iterations = iterations;
-    returnData.timeToGenerate = (float)PG::Time::GetElapsedTime( startTime, stopTime );
+    returnData.timeToGenerate = (float)PG::Time::GetElapsedTime( startTime, stopTime ) / 1000.0f;
 
     if ( options.outputGenNormals )
     {
@@ -314,6 +335,7 @@ int main( int argc, char** argv )
 {
     Logger_Init();
     Logger_AddLogLocation( "stdout", stdout );
+    Logger_AddLogLocation( "file", "log.txt" );
 
     Options options = {};
     if ( !ParseCommandLineArgs( argc, argv, options ) )
@@ -330,7 +352,7 @@ int main( int argc, char** argv )
 
     std::vector<uint32_t> iterationsList;
     if ( options.rangeOfIterations )
-        iterationsList = { 32, 64, 128, 256, 512, 1024, 2048, 4096, 32768 };// 131072 };
+        iterationsList = { 32, 64, 128, 256, 512, 1024, 2048, 4096, 32768 };//, 131072 };
     else
         iterationsList = { options.numIterations };
 
@@ -358,7 +380,7 @@ int main( int argc, char** argv )
     {
         // combine images into 1 big one for comparison, with a 4 pixel border between
         // if normal maps were generated from the height maps, add a 2nd row to this combined image with those
-        const std::unordered_set<uint32_t> imgsToSave = { 32, 128, 512, 2048, 32768 }; //, 131072 };
+        const std::unordered_set<uint32_t> imgsToSave = { 32, 128, 512, 2048, 32768 };//, 131072 };
         uint32_t imagesSaved = 0;
         const uint32_t totalImagesToSave = (uint32_t)imgsToSave.size();
         const vec4 borderColor = vec4( 0, 0, 1, 1 );
