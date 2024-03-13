@@ -40,6 +40,7 @@ Note: this tool expects the normal map to have +X to the right, and +Y down. See
 
 Options
   -f, --flipY           Flip the Y direction on the normal map when loading it
+  -x, --flipX           Flip the X direction on the normal map when loading it
   -g, --genNormalMap    Generate the normal map from the generated height map to compare to the original
   -h, --help            Print this message and exit
   -i, --iterations=N    How many iterations to use while generating the height map. Default is 1024
@@ -48,9 +49,13 @@ Options
   -s, --slopeScale=X    How much to scale the normals by, before generating the height map. Default is 1.0
 ```
 
-## Example
+## Examples
 
-
+```
+NormalToHeight -g ../normal_maps/rock_wall_10_1024.png
+NormalToHeight -f ../normal_maps/synthetic_shapes_1_512.png
+NormalToHeight ../normal_maps/synthetic_rings_512.png
+```
 
 ## Credits for the source normal maps:
 rock_wall_10: https://polyhaven.com/a/rock_wall_10
