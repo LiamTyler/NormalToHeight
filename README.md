@@ -49,15 +49,15 @@ Options
   -s, --slopeScale=X    How much to scale the normals by, before generating the height map. Default is 1.0
 ```
 
-## Examples
+### Usage Examples
 
 ```
-NormalToHeight -g ../normal_maps/rock_wall_10_1024.png
-NormalToHeight -f ../normal_maps/synthetic_shapes_1_512.png
-NormalToHeight ../normal_maps/synthetic_rings_512.png
+NormalToHeight.exe -g ../normal_maps/rock_wall_10_1024.png
+NormalToHeight.exe -f ../normal_maps/synthetic_shapes_1_512.png
+NormalToHeight.exe ../normal_maps/synthetic_rings_512.png
 ```
 
 ## Credits for the source normal maps:
-rock_wall_10: https://polyhaven.com/a/rock_wall_10
-synthetic_rings: https://cpetry.github.io/NormalMap-Online/
-synthetic_shapes_1: https://dreamlight.com/how-to-create-normal-maps-from-photographs/
+- rock_wall_10: https://polyhaven.com/a/rock_wall_10
+- synthetic_rings: https://cpetry.github.io/NormalMap-Online/
+- synthetic_shapes_1: https://dreamlight.com/how-to-create-normal-maps-from-photographs/
