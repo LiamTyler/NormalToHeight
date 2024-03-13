@@ -452,7 +452,7 @@ static vec3 ScaleNormal( vec3 n, float scale )
 
 // Unpack the normals such that the error on neutral normals is 0, at the cost of higher error elsewhere
 // http://www.aclockworkberry.com/normal-unpacking-quantization-errors/
-FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool isYDown )
+FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool flipY, bool flipX )
 {
     RawImage2D rawImg;
     if ( !rawImg.Load( filename ) )
@@ -465,8 +465,11 @@ FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool 
         for ( uint32_t i = 0; i < normalMap.width * normalMap.height; ++i )
         {
             vec3 normal = UnpackNormal_32Bit( vec3( normalMap.GetFloat4( i ) ) );
-            if ( !isYDown )
+            if ( flipY )
                 normal.y *= -1;
+            if ( flipX )
+                normal.x *= -1;
+
             normal = ScaleNormal( normal, slopeScale );
             normalMap.SetFromFloat4( i, vec4( normal, 0 ) );
         }
@@ -482,8 +485,11 @@ FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool 
             else
                 normal = UnpackNormal_16Bit( rawImg.Raw<uint16_t>() + i * rawImg.NumChannels() );
 
-            if ( !isYDown )
+            if ( flipY )
                 normal.y *= -1;
+            if ( flipX )
+                normal.x *= -1;
+
             normal = ScaleNormal( normal, slopeScale );
             normalMap.SetFromFloat4( i, vec4( normal, 0 ) );
         }

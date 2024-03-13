@@ -268,4 +268,4 @@ uint32_t CalculateNumMips( uint32_t width, uint32_t height );
 double FloatImageMSE( const FloatImage2D& img1, const FloatImage2D& img2, uint32_t channelsToCalc = 0b1111 );
 double MSEToPSNR( double mse, double maxValue = 1.0 );
 
-FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool isYDown );
+FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool flipY, bool flipX );

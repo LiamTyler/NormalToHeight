@@ -9,9 +9,10 @@
 struct Options
 {
     std::string normalMapPath;
-    uint32_t numIterations = 64;
+    uint32_t numIterations = 512;
     float slopeScale = 1.0f;
     bool flipY = false;
+    bool flipX = false;
     bool outputGenNormals = false;
     bool rangeOfIterations = false;
 };
@@ -95,7 +96,7 @@ void BuildDisplacement( const FloatImage2D& dxdyImg, float* h0, float* h1, uint3
                 h += cur[col   + up * width]    + 0.5f * (dxdyImg.GetFloat4( up, col ).y);
                 h += cur[col   + down * width]  - 0.5f * (dxdyImg.GetFloat4( down, col ).y);
 #if DIAGONALS
-                const float S = 1.0f; //sqrt( 2.0f ) / 2.0f;
+                const float S = sqrt( 2.0f ) / 2.0f;
                 vec2 UL = dxdyImg.GetFloat4( up, left );
                 vec2 UR = dxdyImg.GetFloat4( up, right );
                 vec2 DL = dxdyImg.GetFloat4( down, left );
@@ -240,13 +241,15 @@ GenerationResults GetHeightMapFromNormalMap( const FloatImage2D& normalMap, uint
     return returnData;
 }
 
-void PackNormalMap( FloatImage2D& normalMap, bool sourceWasYDown )
+void PackNormalMap( FloatImage2D& normalMap, bool flipY, bool flipX )
 {
     for ( uint32_t i = 0; i < normalMap.width * normalMap.height; ++i )
     {
         vec3 normal = normalMap.GetFloat4( i );
-        if ( !sourceWasYDown )
+        if ( flipY )
             normal.y *= -1;
+        if ( flipX )
+            normal.x *= -1;
 
         vec3 packedNormal = 0.5f * (normal + vec3( 1.0f ));
         normalMap.SetFromFloat4( i, vec4( packedNormal, 0 ) );
@@ -258,9 +261,10 @@ static void DisplayHelp()
     auto msg =
         "Usage: NormalToHeight [options] PATH_TO_NORMAL_MAP\n"
         "Will generate height map(s) and will create and output them in a directory called '[PATH_TO_NORMAL_MAP]__autogen/'\n"
-        "Note: this tool expects the normal map to have +Y pointed down. If it's not, use the --flipY option\n\n"
+        "Note: this tool expects the normal map to have +X to the right, and +Y down. See the --flipY option if the +Y direction is up\n\n"
         "Options\n"
         "  -f, --flipY           Flip the Y direction on the normal map when loading it\n"
+        "  -x, --flipX           Flip the X direction on the normal map when loading it\n"
         "  -g, --genNormalMap    Generate the normal map from the generated height map to compare to the original\n"
         "  -h, --help            Print this message and exit\n"
         "  -i, --iterations=N    How many iterations to use while generating the height map. Default is 1024\n"
@@ -283,6 +287,7 @@ static bool ParseCommandLineArgs( int argc, char** argv, Options& options )
     static struct option long_options[] =
     {
         { "flipY",        no_argument,       0, 'f' },
+        { "flipX",        no_argument,       0, 'x' },
         { "genNormalMap", no_argument,       0, 'g' },
         { "help",         no_argument,       0, 'h' },
         { "iterations",   required_argument, 0, 'i' },
@@ -293,12 +298,15 @@ static bool ParseCommandLineArgs( int argc, char** argv, Options& options )
 
     int option_index  = 0;
     int c             = -1;
-    while ( ( c = getopt_long( argc, argv, "fghi:rs:", long_options, &option_index ) ) != -1 )
+    while ( ( c = getopt_long( argc, argv, "fxghi:rs:", long_options, &option_index ) ) != -1 )
     {
         switch ( c )
         {
         case 'f':
             options.flipY = true;
+            break;
+        case 'x':
+            options.flipX = true;
             break;
         case 'g':
             options.outputGenNormals = true;
@@ -343,7 +351,7 @@ int main( int argc, char** argv )
         return 0;
     }
 
-    FloatImage2D normalMap = LoadNormalMap( options.normalMapPath, 1.0f, !options.flipY );
+    FloatImage2D normalMap = LoadNormalMap( options.normalMapPath, 1.0f, options.flipY, options.flipX );
     if ( !normalMap )
         return 0;
 
@@ -352,7 +360,7 @@ int main( int argc, char** argv )
 
     std::vector<uint32_t> iterationsList;
     if ( options.rangeOfIterations )
-        iterationsList = { 32, 64, 128, 256, 512, 1024, 2048, 4096, 32768 };//, 131072 };
+        iterationsList = { 32, 64, 128, 256, 512, 1024, 2048, 4096, 32768 };
     else
         iterationsList = { options.numIterations };
 
@@ -368,7 +376,7 @@ int main( int argc, char** argv )
         if ( options.outputGenNormals )
         {
             LOG( "\tGenerated Normals PSNR = %.3f", result.PSNR );
-            PackNormalMap( result.generatedNormalMap, !options.flipY );
+            PackNormalMap( result.generatedNormalMap, options.flipY, options.flipX );
             result.generatedNormalMap.Save( outputPathBase + "_gn_" + std::to_string( iterationsList[i] ) + GetFileExtension( options.normalMapPath ) );
         }
         result.heightMap.Save( outputPathBase + "_gh_" + std::to_string( iterationsList[i] ) + GetFileExtension( options.normalMapPath ) );
@@ -380,7 +388,7 @@ int main( int argc, char** argv )
     {
         // combine images into 1 big one for comparison, with a 4 pixel border between
         // if normal maps were generated from the height maps, add a 2nd row to this combined image with those
-        const std::unordered_set<uint32_t> imgsToSave = { 32, 128, 512, 2048, 32768 };//, 131072 };
+        const std::unordered_set<uint32_t> imgsToSave = { 32, 128, 512, 2048, 32768 };
         uint32_t imagesSaved = 0;
         const uint32_t totalImagesToSave = (uint32_t)imgsToSave.size();
         const vec4 borderColor = vec4( 0, 0, 1, 1 );

@@ -31,10 +31,12 @@ make -j
 ```
 
 ## Usage
+
+`NormalToHeight --help`:
 ```
 NormalToHeight [options] PATH_TO_NORMAL_MAP
 Will generate height map(s) and will create and output them in a directory called '[PATH_TO_NORMAL_MAP]__autogen/'
-Note: this tool expects the normal map to have +Y pointed down. If it's not, use the --flipY option
+Note: this tool expects the normal map to have +X to the right, and +Y down. See the --flipY and flipX options if not.
 
 Options
   -f, --flipY           Flip the Y direction on the normal map when loading it
@@ -46,7 +48,8 @@ Options
   -s, --slopeScale=X    How much to scale the normals by, before generating the height map. Default is 1.0
 ```
 
-Please use `NormalToHeight --help` for the latest usage
+## Example
+
 
 
 ## Credits for the source normal maps:
