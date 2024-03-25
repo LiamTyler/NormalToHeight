@@ -70,6 +70,7 @@ SET_TARGET_COMPILE_OPTIONS_DEFAULT(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/code/
 	${CMAKE_CURRENT_SOURCE_DIR}/code/external/
+	#${CMAKE_CURRENT_SOURCE_DIR}/code/external/eigen-3.4.0/
 	${EXT_DIR}/libtiff/libtiff/
     ${CMAKE_BINARY_DIR}/ext/libtiff/libtiff/
 )
