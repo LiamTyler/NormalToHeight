@@ -13,10 +13,16 @@ find_package(OpenMP REQUIRED)
 
 set(SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/code/main.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/code/height_to_normal.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/code/height_to_normal.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/code/image.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/code/image.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/code/image_load.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/code/image_save.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/code/normal_to_height.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/code/normal_to_height.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/code/normal_to_height_experimental.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/code/normal_to_height_experimental.hpp
 )
 
 set(EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/code/external)

@@ -106,7 +106,7 @@ bool RawImage2D::Load( const std::string& filename, ImageLoadFlags loadFlags )
             uint32_t bytesPerPixel = numChannels * numBitsPerChannel / 8;
             uint32_t bytesPerRow   = width * bytesPerPixel;
 
-            uint32_t totalRowsRead = 0;
+            int totalRowsRead = 0;
             for ( uint32_t strip = 0; strip < numStrips; strip++ )
             {
                 if ( TIFFReadEncodedStrip( tif, strip, buf, (tsize_t)-1 ) == -1 )
@@ -158,9 +158,9 @@ bool RawImage2D::Load( const std::string& filename, ImageLoadFlags loadFlags )
 
     if ( IsSet( loadFlags, ImageLoadFlags::FLIP_VERTICALLY ) )
     {
-        uint32_t bytesPerRow = width * BitsPerPixel() / 8;
-        uint8_t* tmpRow      = new uint8_t[bytesPerRow];
-        for ( uint32_t row = 0; row < height / 2; ++row )
+        int bytesPerRow = width * BitsPerPixel() / 8;
+        uint8_t* tmpRow = new uint8_t[bytesPerRow];
+        for ( int row = 0; row < height / 2; ++row )
         {
             uint8_t* upperRow = data.get() + row * bytesPerRow;
             uint8_t* lowerRow = data.get() + ( height - row - 1 ) * bytesPerRow;

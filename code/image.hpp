@@ -138,13 +138,13 @@ enum class Channel : uint8_t
 
 struct RawImage2D
 {
-    uint32_t width     = 0;
-    uint32_t height    = 0;
+    int width     = 0;
+    int height    = 0;
     ImageFormat format = ImageFormat::INVALID;
     std::shared_ptr<uint8_t[]> data;
 
     RawImage2D() = default;
-    RawImage2D( uint32_t inWidth, uint32_t inHeight, ImageFormat inFormat ) : width( inWidth ), height( inHeight ), format( inFormat )
+    RawImage2D( int inWidth, int inHeight, ImageFormat inFormat ) : width( inWidth ), height( inHeight ), format( inFormat )
     {
         size_t totalBytes = TotalBytes();
         data              = std::make_shared<uint8_t[]>( totalBytes );
@@ -192,13 +192,13 @@ struct RawImage2D
 
 struct FloatImage2D
 {
-    uint32_t width       = 0;
-    uint32_t height      = 0;
-    uint32_t numChannels = 0;
+    int width       = 0;
+    int height      = 0;
+    int numChannels = 0;
     std::shared_ptr<float[]> data;
 
     FloatImage2D() = default;
-    FloatImage2D( uint32_t inWidth, uint32_t inHeight, uint32_t inNumChannels )
+    FloatImage2D( int inWidth, int inHeight, int inNumChannels )
         : width( inWidth ), height( inHeight ), numChannels( inNumChannels )
     {
         data = std::make_shared<float[]>( width * height * numChannels );
@@ -210,36 +210,37 @@ struct FloatImage2D
     // Currently just calls RawImage2DFromFloatImage, and then RawImage2D::Save
     bool Save( const std::string& filename, ImageSaveFlags saveFlags = ImageSaveFlags::DEFAULT ) const;
 
-    FloatImage2D Resize( uint32_t newWidth, uint32_t newHeight ) const;
+    FloatImage2D Resize( int newWidth, int newHeight ) const;
     FloatImage2D Clone() const;
 
     template <typename Func>
     void ForEachPixelIndex( Func F )
     {
-        for ( uint32_t i = 0; i < width * height; ++i )
+        for ( int i = 0; i < width * height; ++i )
             F( i );
     }
 
     template <typename Func>
     void ForEachPixel( Func F )
     {
-        for ( uint32_t i = 0; i < width * height; ++i )
+        for ( int i = 0; i < width * height; ++i )
         {
             F( &data[i * numChannels] );
         }
     }
 
     vec4 Sample( vec2 uv, bool clampHorizontal, bool clampVertical ) const; // bilinear
-    vec4 GetFloat4( uint32_t pixelIndex ) const;
-    vec4 GetFloat4( uint32_t row, uint32_t col ) const;
-    vec4 GetFloat4( uint32_t row, uint32_t col, bool clampHorizontal, bool clampVertical ) const;
-    void SetFromFloat4( uint32_t pixelIndex, const vec4& pixel );
-    void SetFromFloat4( uint32_t row, uint32_t col, const vec4& pixel );
-
-    float operator()( uint32_t row, uint32_t col ) const
-    {
-        return data[(row * width + col) * numChannels];
-    }
+    vec4 Get( int pixelIndex ) const;
+    vec4 Get( int row, int col ) const;
+    vec4 Get( int row, int col, bool clampHorizontal, bool clampVertical ) const;
+    void Set( int pixelIndex, const float pixel );
+    void Set( int row, int col, const float pixel );
+    void Set( int pixelIndex, const vec2& pixel );
+    void Set( int row, int col, const vec2& pixel );
+    void Set( int pixelIndex, const vec3& pixel );
+    void Set( int row, int col, const vec3& pixel );
+    void Set( int pixelIndex, const vec4& pixel );
+    void Set( int row, int col, const vec4& pixel );
 
     operator bool() const { return width && height && numChannels && data != nullptr; }
 };
@@ -264,7 +265,7 @@ struct MipmapGenerationSettings
 
 std::vector<FloatImage2D> GenerateMipmaps( const FloatImage2D& floatImage, const MipmapGenerationSettings& settings );
 
-uint32_t CalculateNumMips( uint32_t width, uint32_t height );
+uint32_t CalculateNumMips( int width, int height );
 double FloatImageMSE( const FloatImage2D& img1, const FloatImage2D& img2, uint32_t channelsToCalc = 0b1111 );
 double MSEToPSNR( double mse, double maxValue = 1.0 );
 

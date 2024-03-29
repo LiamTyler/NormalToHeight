@@ -11,7 +11,7 @@ static vec4 DEFAULT_PIXEL_FLOAT32    = vec4( 0, 0, 0, 1 );
 
 float RawImage2D::GetPixelAsFloat( int row, int col, int chan ) const
 {
-    uint32_t numChannels = NumChannels();
+    int numChannels = NumChannels();
     if ( chan >= (int)numChannels )
     {
         return DEFAULT_PIXEL_FLOAT32[chan];
@@ -40,27 +40,27 @@ float RawImage2D::GetPixelAsFloat( int row, int col, int chan ) const
 
 vec4 RawImage2D::GetPixelAsFloat4( int row, int col ) const
 {
-    vec4 pixel           = DEFAULT_PIXEL_FLOAT32;
-    uint32_t numChannels = NumChannels();
-    uint32_t index       = numChannels * ( row * width + col );
+    vec4 pixel      = DEFAULT_PIXEL_FLOAT32;
+    int numChannels = NumChannels();
+    int index       = numChannels * ( row * width + col );
     if ( IsFormat8BitUnorm( format ) )
     {
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
             pixel[chan] = UNormByteToFloat( Raw<uint8_t>()[index + chan] );
     }
     else if ( IsFormat16BitUnorm( format ) )
     {
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
             pixel[chan] = UNorm16ToFloat( Raw<uint16_t>()[index + chan] );
     }
     else if ( IsFormat16BitFloat( format ) )
     {
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
             pixel[chan] = Float16ToFloat32( Raw<float16>()[index + chan] );
     }
     else if ( IsFormat32BitFloat( format ) )
     {
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
             pixel[chan] = Raw<float>()[index + chan];
     }
 
@@ -69,8 +69,7 @@ vec4 RawImage2D::GetPixelAsFloat4( int row, int col ) const
 
 void RawImage2D::SetPixelFromFloat( int row, int col, int chan, float x )
 {
-    uint32_t numChannels = NumChannels();
-    int index            = numChannels * ( row * width + col ) + chan;
+    int index       = NumChannels() * ( row * width + col ) + chan;
     if ( IsFormat8BitUnorm( format ) )
     {
         Raw<uint8_t>()[index] = UNormFloatToByte( x );
@@ -91,26 +90,26 @@ void RawImage2D::SetPixelFromFloat( int row, int col, int chan, float x )
 
 void RawImage2D::SetPixelFromFloat4( int row, int col, vec4 pixel )
 {
-    uint32_t numChannels = NumChannels();
-    uint32_t index       = numChannels * ( row * width + col );
+    int numChannels = NumChannels();
+    int index       = numChannels * ( row * width + col );
     if ( IsFormat8BitUnorm( format ) )
     {
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
             Raw<uint8_t>()[index + chan] = UNormFloatToByte( pixel[chan] );
     }
     else if ( IsFormat16BitUnorm( format ) )
     {
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
             Raw<uint16_t>()[index + chan] = FloatToUNorm16( pixel[chan] );
     }
     else if ( IsFormat16BitFloat( format ) )
     {
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
             Raw<float16>()[index + chan] = Float32ToFloat16( pixel[chan] );
     }
     else if ( IsFormat32BitFloat( format ) )
     {
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
             Raw<float>()[index + chan] = pixel[chan];
     }
 }
@@ -119,12 +118,12 @@ void RawImage2D::SetPixelFromFloat4( int row, int col, vec4 pixel )
 RawImage2D RawImage2D::Convert( ImageFormat dstFormat ) const
 {
     RawImage2D outputImg( width, height, dstFormat );
-    uint32_t inputChannels  = NumChannels();
-    uint32_t outputChannels = outputImg.NumChannels();
+    int inputChannels  = NumChannels();
+    int outputChannels = outputImg.NumChannels();
 
-    for ( uint32_t row = 0; row < height; ++row )
+    for ( int row = 0; row < height; ++row )
     {
-        for ( uint32_t col = 0; col < width; ++col )
+        for ( int col = 0; col < width; ++col )
         {
             vec4 pixelAsFloat = GetPixelAsFloat4( row, col );
             outputImg.SetPixelFromFloat4( row, col, pixelAsFloat );
@@ -159,7 +158,7 @@ bool FloatImage2D::Save( const std::string& filename, ImageSaveFlags saveFlags )
     return img.Save( filename, saveFlags );
 }
 
-FloatImage2D FloatImage2D::Resize( uint32_t newWidth, uint32_t newHeight ) const
+FloatImage2D FloatImage2D::Resize( int newWidth, int newHeight ) const
 {
     if ( width == newWidth && height == newHeight )
     {
@@ -170,10 +169,10 @@ FloatImage2D FloatImage2D::Resize( uint32_t newWidth, uint32_t newHeight ) const
     if ( width == 1 && height == 1 )
     {
         float p[4];
-        for ( uint32_t i = 0; i < numChannels; ++i )
+        for ( int i = 0; i < numChannels; ++i )
             p[i] = data[i];
 
-        for ( uint32_t i = 0; i < newWidth * newHeight * numChannels; i += numChannels )
+        for ( int i = 0; i < newWidth * newHeight * numChannels; i += numChannels )
         {
             memcpy( &outputImage.data[i], p, numChannels * sizeof( float ) );
         }
@@ -191,7 +190,8 @@ FloatImage2D FloatImage2D::Resize( uint32_t newWidth, uint32_t newHeight ) const
 FloatImage2D FloatImage2D::Clone() const
 {
     FloatImage2D ret( width, height, numChannels );
-    memcpy( ret.data.get(), data.get(), width * height * numChannels * sizeof( float ) );
+    size_t size = width * height;
+    memcpy( ret.data.get(), data.get(), size * numChannels * sizeof( float ) );
     return ret;
 }
 
@@ -212,13 +212,13 @@ vec4 FloatImage2D::Sample( vec2 uv, bool clampHorizontal, bool clampVertical ) c
     const float w10 = ( 1.0f - d.x ) * d.y;
     const float w11 = d.x * d.y;
 
-    vec4 p00 = GetFloat4( row, col, clampHorizontal, clampVertical );
-    vec4 p01 = GetFloat4( row, col + 1, clampHorizontal, clampVertical );
-    vec4 p10 = GetFloat4( row + 1, col, clampHorizontal, clampVertical );
-    vec4 p11 = GetFloat4( row + 1, col + 1, clampHorizontal, clampVertical );
+    vec4 p00 = Get( row, col, clampHorizontal, clampVertical );
+    vec4 p01 = Get( row, col + 1, clampHorizontal, clampVertical );
+    vec4 p10 = Get( row + 1, col, clampHorizontal, clampVertical );
+    vec4 p11 = Get( row + 1, col + 1, clampHorizontal, clampVertical );
 
     vec4 ret( 0, 0, 0, 1 );
-    for ( uint32_t i = 0; i < numChannels; ++i )
+    for ( int i = 0; i < numChannels; ++i )
     {
         ret[i] = w00 * p00[i] + w01 * p01[i] + w10 * p10[i] + w11 * p11[i];
     }
@@ -226,11 +226,11 @@ vec4 FloatImage2D::Sample( vec2 uv, bool clampHorizontal, bool clampVertical ) c
     return ret;
 }
 
-vec4 FloatImage2D::GetFloat4( uint32_t pixelIndex ) const
+vec4 FloatImage2D::Get( int pixelIndex ) const
 {
     vec4 pixel( 0, 0, 0, 1 );
     pixelIndex *= numChannels;
-    for ( uint32_t chan = 0; chan < numChannels; ++chan )
+    for ( int chan = 0; chan < numChannels; ++chan )
     {
         pixel[chan] = data[pixelIndex + chan];
     }
@@ -238,44 +238,70 @@ vec4 FloatImage2D::GetFloat4( uint32_t pixelIndex ) const
     return pixel;
 }
 
-vec4 FloatImage2D::GetFloat4( uint32_t row, uint32_t col ) const { return GetFloat4( row * width + col ); }
+vec4 FloatImage2D::Get( int row, int col ) const { return Get( row * width + col ); }
 
-vec4 FloatImage2D::GetFloat4( uint32_t row, uint32_t col, bool clampHorizontal, bool clampVertical ) const
+vec4 FloatImage2D::Get( int row, int col, bool clampHorizontal, bool clampVertical ) const
 {
     if ( clampHorizontal )
     {
-        col = std::clamp( col, 0u, width - 1 );
+        col = std::clamp( col, 0, width - 1 );
     }
     else
     {
-        col = ( col % width );
+        col = ( col % width + width ) % width;
         if ( col < 0 )
             col += width;
     }
     if ( clampVertical )
     {
-        row = std::clamp( row, 0u, height - 1 );
+        row = std::clamp( row, 0, height - 1 );
     }
     else
     {
-        row = ( row % height );
+        row = ( row % height + height ) % height;
         if ( row < 0 )
             row += height;
     }
 
-    return GetFloat4( row, col );
+    return Get( row, col );
 }
 
-void FloatImage2D::SetFromFloat4( uint32_t pixelIndex, const vec4& pixel )
+void FloatImage2D::Set( int pixelIndex, const float pixel )
+{
+    data[pixelIndex * numChannels] = pixel;
+}
+
+void FloatImage2D::Set( int pixelIndex, const vec2& pixel )
 {
     pixelIndex *= numChannels;
-    for ( uint32_t chan = 0; chan < numChannels; ++chan )
+    for ( int chan = 0; chan < Min( numChannels, 2 ); ++chan )
     {
         data[pixelIndex + chan] = pixel[chan];
     }
 }
 
-void FloatImage2D::SetFromFloat4( uint32_t row, uint32_t col, const vec4& pixel ) { SetFromFloat4( row * width + col, pixel ); }
+void FloatImage2D::Set( int pixelIndex, const vec3& pixel )
+{
+    pixelIndex *= numChannels;
+    for ( int chan = 0; chan < Min( numChannels, 3 ); ++chan )
+    {
+        data[pixelIndex + chan] = pixel[chan];
+    }
+}
+
+void FloatImage2D::Set( int pixelIndex, const vec4& pixel )
+{
+    pixelIndex *= numChannels;
+    for ( int chan = 0; chan < numChannels; ++chan )
+    {
+        data[pixelIndex + chan] = pixel[chan];
+    }
+}
+
+void FloatImage2D::Set( int row, int col, const float pixel ) { Set( row * width + col, pixel ); }
+void FloatImage2D::Set( int row, int col, const vec2& pixel ) { Set( row * width + col, pixel ); }
+void FloatImage2D::Set( int row, int col, const vec3& pixel ) { Set( row * width + col, pixel ); }
+void FloatImage2D::Set( int row, int col, const vec4& pixel ) { Set( row * width + col, pixel ); }
 
 FloatImage2D FloatImageFromRawImage2D( const RawImage2D& rawImage )
 {
@@ -333,9 +359,9 @@ std::vector<FloatImage2D> GenerateMipmaps( const FloatImage2D& image, const Mipm
 
     uint32_t numMips = CalculateNumMips( image.width, image.height );
 
-    uint32_t w           = image.width;
-    uint32_t h           = image.height;
-    uint32_t numChannels = image.numChannels;
+    int w           = image.width;
+    int h           = image.height;
+    int numChannels = image.numChannels;
     stbir_edge edgeModeU = settings.clampHorizontal ? STBIR_EDGE_CLAMP : STBIR_EDGE_WRAP;
     stbir_edge edgeModeV = settings.clampVertical ? STBIR_EDGE_CLAMP : STBIR_EDGE_WRAP;
     for ( uint32_t mipLevel = 0; mipLevel < numMips; ++mipLevel )
@@ -357,24 +383,25 @@ std::vector<FloatImage2D> GenerateMipmaps( const FloatImage2D& image, const Mipm
         }
 
         mips.push_back( mip );
-        w = Max( 1u, w >> 1 );
-        h = Max( 1u, h >> 1 );
+        w = Max( 1, w >> 1 );
+        h = Max( 1, h >> 1 );
     }
 
     return mips;
 }
 
-uint32_t CalculateNumMips( uint32_t width, uint32_t height )
+uint32_t CalculateNumMips( int width, int height )
 {
-    uint32_t largestDim = Max( width, height );
-    if ( largestDim == 0 )
+    int largestDim = Max( width, height );
+    if ( largestDim <= 0 )
     {
         return 0;
     }
 
-    return 1 + static_cast<uint32_t>( std::log2f( static_cast<float>( largestDim ) ) );
+    return 1 + static_cast<uint32_t>( std::log2( largestDim ) );
 }
 
+// slightly confusing, but channelsToCalc is a mask. 0b1111 would be all channels (RGBA). 0b1001 would only be R & A channels
 double FloatImageMSE( const FloatImage2D& img1, const FloatImage2D& img2, uint32_t channelsToCalc )
 {
     if ( img1.width != img2.width || img1.height != img2.height || img1.numChannels != img2.numChannels )
@@ -383,18 +410,14 @@ double FloatImageMSE( const FloatImage2D& img1, const FloatImage2D& img2, uint32
         return -1;
     }
 
-    uint32_t width       = img1.width;
-    uint32_t height      = img1.height;
-    uint32_t numChannels = img1.numChannels;
+    int width       = img1.width;
+    int height      = img1.height;
+    int numChannels = img1.numChannels;
 
     double mse = 0;
-    for ( uint32_t pixelIdx = 0; pixelIdx < width * height; ++pixelIdx )
+    for ( int pixelIdx = 0; pixelIdx < width * height; ++pixelIdx )
     {
-        if ( pixelIdx == 350 * img1.width + 334 )
-        {
-            printf( "" );
-        }
-        for ( uint32_t chan = 0; chan < numChannels; ++chan )
+        for ( int chan = 0; chan < numChannels; ++chan )
         {
             if ( channelsToCalc & ( 1 << ( 3 - chan ) ) )
             {
@@ -405,8 +428,8 @@ double FloatImageMSE( const FloatImage2D& img1, const FloatImage2D& img2, uint32
         }
     }
 
-    uint32_t numActualChannels = 0;
-    for ( uint32_t chan = 0; chan < numChannels; ++chan )
+    int numActualChannels = 0;
+    for ( int chan = 0; chan < numChannels; ++chan )
     {
         if ( channelsToCalc & ( 1 << ( 3 - chan ) ) )
         {
@@ -462,22 +485,22 @@ FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool 
     if ( IsFormat16BitFloat( rawImg.format ) || IsFormat32BitFloat( rawImg.format ) )
     {
         normalMap = FloatImageFromRawImage2D( rawImg );
-        for ( uint32_t i = 0; i < normalMap.width * normalMap.height; ++i )
+        for ( int i = 0; i < normalMap.width * normalMap.height; ++i )
         {
-            vec3 normal = UnpackNormal_32Bit( vec3( normalMap.GetFloat4( i ) ) );
+            vec3 normal = UnpackNormal_32Bit( normalMap.Get( i ) );
             if ( flipY )
                 normal.y *= -1;
             if ( flipX )
                 normal.x *= -1;
 
             normal = ScaleNormal( normal, slopeScale );
-            normalMap.SetFromFloat4( i, vec4( normal, 0 ) );
+            normalMap.Set( i, normal );
         }
     }
     else
     {
         normalMap = FloatImage2D( rawImg.width, rawImg.height, 3 );
-        for ( uint32_t i = 0; i < normalMap.width * normalMap.height; ++i )
+        for ( int i = 0; i < normalMap.width * normalMap.height; ++i )
         {
             vec3 normal;
             if ( IsFormat8BitUnorm( rawImg.format ) )
@@ -491,7 +514,7 @@ FloatImage2D LoadNormalMap( const std::string& filename, float slopeScale, bool 
                 normal.x *= -1;
 
             normal = ScaleNormal( normal, slopeScale );
-            normalMap.SetFromFloat4( i, vec4( normal, 0 ) );
+            normalMap.Set( i, normal );
         }
     }
 
