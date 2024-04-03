@@ -26,7 +26,7 @@ git clone --recursive https://github.com/LiamTyler/NormalToHeight.git
 cd NormalToHeight 
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=[Debug/Release/Ship] ..
+cmake -DCMAKE_BUILD_TYPE=[Debug/Release] ..
 make -j
 ```
 
@@ -45,25 +45,24 @@ Options
   -h, --help            Print this message and exit
   -i, --iterations=N    How many iterations to use while generating the height map. Default is 1024
       --iterMultipier=X Only applicable with HeightGenMethod::RELAXATION*. The lower this is, the fewer
-	                      iterations happen on the largest mips. (0, 1]. Default is 0.25
+                          iterations happen on the largest mips. (0, 1]. Default is 0.25
   -m  --method          Which method to use to generate the height map
                           (0 == RELAXATION, 1 == RELAXTION_EDGE_AWARE, 2 == LINEAR_SYSTEM).
-						  The outputted height maps will have '_gh_', '_ghe_', or '_ghl_'
-						  in their postfixes, respectively.
+                          The outputted height maps will have '_gh_', '_ghe_', or '_ghl_'
+                          in their postfixes, respectively.
   -r, --range           If specified, will output several images, with a
-						  range of iterations (ignoring the -i command).
+                          range of iterations (ignoring the -i command).
                         This can take a long time, especially for large images.
-						  Suggested on 1024 or smaller images
+                          Suggested on 1024 or smaller images
   -s, --slopeScale=X    How much to scale the normals by, before generating the height map. Default is 1.0
   -w, --withoutGuess    Only applicable with HeightGenMethod::LINEAR_SYSTEM. By default,
                           it generates a height map using RELAXATION, and uses that
-						  as the initial guess for the solver
+                          as the initial guess for the solver
   -x, --flipX           Flip the X direction on the normal map when loading it
   -y, --flipY           Flip the Y direction on the normal map when loading it
 ```
 
 ### Usage Examples
-
 
 ```
 NormalToHeight.exe -g ../normal_maps/rock_wall_10_1024.png
