@@ -2,13 +2,15 @@
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
 
-void BuildDisplacement_WithEdges( const FloatImage2D& dxdyImg, const std::vector<FloatImage2D>& edgeImgs, float* tmpH1, float* tmpH2, uint32_t numIterations, float iterationMultiplier, uint32_t mipLevel = 0 )
+void BuildDisplacement_WithEdges( const FloatImage2D& dxdyImg, const std::vector<FloatImage2D>& edgeImgs, float* scratchH,
+    float* outputH, uint32_t numIterations, float iterationMultiplier, uint32_t mipLevel = 0 )
 {
     int width = dxdyImg.width;
     int height = dxdyImg.height;
     if ( width == 1 || height == 1 )
     {
-        memset( tmpH1, 0, width * height * sizeof( float ) );
+        memset( outputH, 0, width * height * sizeof( float ) );
+        return;
     }
     else
     {
@@ -24,14 +26,14 @@ void BuildDisplacement_WithEdges( const FloatImage2D& dxdyImg, const std::vector
                 p[1] *= scaleY;
             });
 
-        BuildDisplacement_WithEdges( halfDxDyImg, edgeImgs, tmpH1, tmpH2, numIterations, 2 * iterationMultiplier, mipLevel + 1 );
+        BuildDisplacement_WithEdges( halfDxDyImg, edgeImgs, scratchH, outputH, numIterations, 2 * iterationMultiplier, mipLevel + 1 );
 
-        stbir_resize_float_generic( tmpH2, halfW, halfH, 0, tmpH1, width, height, 0,
+        stbir_resize_float_generic( outputH, halfW, halfH, 0, scratchH, width, height, 0,
             1, -1, 0, STBIR_EDGE_WRAP, STBIR_FILTER_BOX, STBIR_COLORSPACE_LINEAR, NULL );
     }    
     
-    float* cur = tmpH1;
-    float* next = tmpH2;
+    float* cur = scratchH;
+    float* next = outputH;
     numIterations = static_cast<uint32_t>( Min( 1.0f, iterationMultiplier ) * numIterations );
     numIterations += numIterations % 2; // ensure odd number
     const FloatImage2D& edgeImg = edgeImgs[mipLevel];
@@ -137,8 +139,8 @@ GenerationResults GetHeightMapFromNormalMap_WithEdges( const FloatImage2D& norma
         dxdyImg.Set( i, DxDyFromNormal( normal ) * invSize );
     }
 
-    FloatImage2D tmpH1 = FloatImage2D( normalMap.width, normalMap.height, 1 );
-    BuildDisplacement_WithEdges( dxdyImg, edgeImgs, tmpH1.data.get(), returnData.heightMap.map.data.get(), iterations, iterationMultiplier );
+    FloatImage2D scratchH = FloatImage2D( normalMap.width, normalMap.height, 1 );
+    BuildDisplacement_WithEdges( dxdyImg, edgeImgs, scratchH.data.get(), returnData.heightMap.map.data.get(), iterations, iterationMultiplier );
 
     auto stopTime = PG::Time::GetTimePoint();
 

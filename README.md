@@ -34,30 +34,47 @@ make -j
 
 `NormalToHeight --help`:
 ```
-NormalToHeight [options] PATH_TO_NORMAL_MAP
-Will generate height map(s) and will create and output them in a directory called '[PATH_TO_NORMAL_MAP]__autogen/'
-Note: this tool expects the normal map to have +X to the right, and +Y down. See the --flipY and flipX options if not.
+Usage: NormalToHeight [options] PATH_TO_NORMAL_MAP
+Will generate height map(s) and will create and output them in a directory called
+  '[PATH_TO_NORMAL_MAP]__autogen/'
+Note: this tool expects the normal map to have +X to the right, and +Y down.
+  See the --flipY option if the +Y direction is up
 
 Options
-  -f, --flipY           Flip the Y direction on the normal map when loading it
-  -x, --flipX           Flip the X direction on the normal map when loading it
   -g, --genNormalMap    Generate the normal map from the generated height map to compare to the original
   -h, --help            Print this message and exit
   -i, --iterations=N    How many iterations to use while generating the height map. Default is 1024
-  -r, --range           If specified, will output several images, with a range of iterations (ignoring the -i command).
-                        This can take a long time, especially for large images. Suggested on 1024 or smaller images
+      --iterMultipier=X Only applicable with HeightGenMethod::RELAXATION*. The lower this is, the fewer
+	                      iterations happen on the largest mips. (0, 1]. Default is 0.25
+  -m  --method          Which method to use to generate the height map
+                          (0 == RELAXATION, 1 == RELAXTION_EDGE_AWARE, 2 == LINEAR_SYSTEM).
+						  The outputted height maps will have '_gh_', '_ghe_', or '_ghl_'
+						  in their postfixes, respectively.
+  -r, --range           If specified, will output several images, with a
+						  range of iterations (ignoring the -i command).
+                        This can take a long time, especially for large images.
+						  Suggested on 1024 or smaller images
   -s, --slopeScale=X    How much to scale the normals by, before generating the height map. Default is 1.0
+  -w, --withoutGuess    Only applicable with HeightGenMethod::LINEAR_SYSTEM. By default,
+                          it generates a height map using RELAXATION, and uses that
+						  as the initial guess for the solver
+  -x, --flipX           Flip the X direction on the normal map when loading it
+  -y, --flipY           Flip the Y direction on the normal map when loading it
 ```
 
 ### Usage Examples
 
+
 ```
 NormalToHeight.exe -g ../normal_maps/rock_wall_10_1024.png
-NormalToHeight.exe -f ../normal_maps/synthetic_shapes_1_512.png
+NormalToHeight.exe -y ../normal_maps/synthetic_shapes_1_512.png
 NormalToHeight.exe ../normal_maps/synthetic_rings_512.png
 ```
 
 ## Credits for the source normal maps:
-- rock_wall_10: https://polyhaven.com/a/rock_wall_10
+- rock_wall_10_1k: https://polyhaven.com/a/rock_wall_10
+- pine_bark_nor_dx_1k: https://polyhaven.com/a/pine_bark
+- gray_rocks_nor_dx_1k: https://polyhaven.com/a/gray_rocks
+- rock_wall_08_nor_dx_1k: https://polyhaven.com/a/rock_wall_08
 - synthetic_rings: https://cpetry.github.io/NormalMap-Online/
 - synthetic_shapes_1: https://dreamlight.com/how-to-create-normal-maps-from-photographs/

@@ -65,13 +65,13 @@ vec2 DxDyFromNormal( vec3 normal )
     return dxdy;
 }
 
-void BuildDisplacement( const FloatImage2D& dxdyImg, float* tmpH1, float* tmpH2, uint32_t numIterations, float iterationMultiplier )
+void BuildDisplacement( const FloatImage2D& dxdyImg, float* scratchH, float* outputH, uint32_t numIterations, float iterationMultiplier )
 {
     int width = dxdyImg.width;
     int height = dxdyImg.height;
     if ( width == 1 || height == 1 )
     {
-        memset( tmpH2, 0, width * height * sizeof( float ) );
+        memset( outputH, 0, width * height * sizeof( float ) );
         return;
     }
     else
@@ -88,14 +88,14 @@ void BuildDisplacement( const FloatImage2D& dxdyImg, float* tmpH1, float* tmpH2,
             halfDxDyImg.Set( i, scales * vec2( halfDxDyImg.Get( i ) ) );
 
 
-        BuildDisplacement( halfDxDyImg, tmpH1, tmpH2, numIterations, 2 * iterationMultiplier );
+        BuildDisplacement( halfDxDyImg, scratchH, outputH, numIterations, 2 * iterationMultiplier );
 
-        stbir_resize_float_generic( tmpH2, halfW, halfH, 0, tmpH1, width, height, 0,
+        stbir_resize_float_generic( outputH, halfW, halfH, 0, scratchH, width, height, 0,
             1, -1, 0, STBIR_EDGE_WRAP, STBIR_FILTER_BOX, STBIR_COLORSPACE_LINEAR, NULL );
     }
     
-    float* cur = tmpH1;
-    float* next = tmpH2;
+    float* cur = scratchH;
+    float* next = outputH;
     numIterations = static_cast<uint32_t>( Min( 1.0f, iterationMultiplier ) * numIterations );
     numIterations += numIterations % 2; // ensure odd number
     
@@ -142,8 +142,8 @@ GenerationResults GetHeightMapFromNormalMap( const FloatImage2D& normalMap, uint
         dxdyImg.Set( i, DxDyFromNormal( normal ) * invSize );
     }
 
-    FloatImage2D tmpH1 = FloatImage2D( normalMap.width, normalMap.height, 1 );
-    BuildDisplacement( dxdyImg, tmpH1.data.get(), returnData.heightMap.map.data.get(), iterations, iterationMultiplier );
+    FloatImage2D scratchH = FloatImage2D( normalMap.width, normalMap.height, 1 );
+    BuildDisplacement( dxdyImg, scratchH.data.get(), returnData.heightMap.map.data.get(), iterations, iterationMultiplier );
 
     auto stopTime = PG::Time::GetTimePoint();
 

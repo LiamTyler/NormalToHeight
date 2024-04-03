@@ -12,12 +12,12 @@
 struct Options
 {
     std::string normalMapPath;
-    HeightGenMethod heightGenMethod = HeightGenMethod::DEFAULT;
-    uint32_t numIterations = 512;
-    float iterationMultiplier = 1.0f;
-    float slopeScale = 1.0f;
     bool flipY = false;
     bool flipX = false;
+    float slopeScale = 1.0f;
+    HeightGenMethod heightGenMethod = HeightGenMethod::DEFAULT;
+    uint32_t numIterations = 1024;
+    float iterationMultiplier = 0.25f;
     bool outputGenNormals = false;
     bool rangeOfIterations = false;
 
@@ -132,6 +132,7 @@ bool Process( const Options& options )
     FloatImage2D normalMap = LoadNormalMap( options.normalMapPath, 1.0f, options.flipY, options.flipX );
     if ( !normalMap )
         return false;
+    std::string normalMapExt = GetFileExtension( options.normalMapPath );
 
     std::string outputDir = GetFilenameMinusExtension( options.normalMapPath ) + "_autogen/";
     CreateDirectory( outputDir );
@@ -167,34 +168,40 @@ bool Process( const Options& options )
         }
 
         LOG( "Finished %dx%d image with %u iterations in %.3f seconds", normalMap.width, normalMap.height, result.iterations, result.timeToGenerate );
-        LOG( "\tGenerated Height Map: MinH = %f, MaxH = %f, Scale = %f", result.heightMap.minH, result.heightMap.maxH, result.heightMap.maxH - result.heightMap.minH );
+        LOG( "\tGenerated Height Map: Scale = %f, Bias = %f", result.heightMap.maxH - result.heightMap.minH, result.heightMap.minH );
 
         std::string outputPathBase = outputDir + GetFilenameStem( options.normalMapPath );
         if ( options.outputGenNormals )
         {
-            //for ( uint32_t nIdx = 0; nIdx < Underlying( NormalCalcMethod::COUNT ); ++nIdx )
-            //for ( uint32_t nIdx = 0; nIdx < 1; ++nIdx )
-            //{
-            //    FloatImage2D generatedNormalMap = GetNormalMapFromHeightMap( result.heightMap, (NormalCalcMethod)nIdx );
-            //    double PSNR = CompareNormalMaps( normalMap, generatedNormalMap );
-            //    LOG( "\tGenerated Normal Method[%u] PSNR = %.3f", nIdx, PSNR );
-            //    PackNormalMap( generatedNormalMap, options.flipY, options.flipX );
-            //    generatedNormalMap.Save( outputPathBase + "_gn_" + std::to_string( nIdx ) + GetFileExtension( options.normalMapPath ) );
-            //}
-
+#if 0
+            for ( uint32_t nIdx = 0; nIdx < Underlying( NormalCalcMethod::COUNT ); ++nIdx )
+            {
+                NormalCalcMethod method = (NormalCalcMethod)nIdx;
+                FloatImage2D generatedNormalMap = GetNormalMapFromHeightMap( result.heightMap, method );
+                double PSNR = CompareNormalMaps( normalMap, generatedNormalMap );
+                LOG( "\tGenerated Normal Method %s PSNR = %f", NormalCalcMethodToStr( method ), PSNR );
+                PackNormalMap( generatedNormalMap, options.flipY, options.flipX );
+                generatedNormalMap.Save( outputPathBase + postfixN + NormalCalcMethodToStr( method ) + normalMapExt );
+            }
+#else
             FloatImage2D generatedNormalMap = GetNormalMapFromHeightMap( result.heightMap, NormalCalcMethod::CROSS );
             double PSNR = CompareNormalMaps( normalMap, generatedNormalMap );
             LOG( "\tGenerated Normals PSNR = %f", PSNR );
 
-            auto diffImg = DiffNormalMaps( normalMap, generatedNormalMap );
-            diffImg.Save( outputPathBase + postfixN + "diff_" + std::to_string( iterationsList[i] ) + ".exr" );
+            //auto diffImg = DiffNormalMaps( normalMap, generatedNormalMap );
+            //diffImg.Save( outputPathBase + postfixN + "diff_" + std::to_string( iterationsList[i] ) + ".exr" );
 
             PackNormalMap( generatedNormalMap, options.flipY, options.flipX );
-            generatedNormalMap.Save( outputPathBase + postfixN + std::to_string( iterationsList[i] ) + GetFileExtension( options.normalMapPath ) );
+            generatedNormalMap.Save( outputPathBase + postfixN + std::to_string( iterationsList[i] ) + normalMapExt );
+#endif
         }
-        result.heightMap.map.Save( outputPathBase + postfixH + std::to_string( iterationsList[i] ) + ".exr" );
-        //result.heightMap.map.Save( outputPathBase + postfix + std::to_string( iterationsList[i] ) + GetFileExtension( options.normalMapPath ) );
+
+        if ( normalMapExt != ".exr" )
+            result.heightMap.Pack0To1();
+
+        result.heightMap.map.Save( outputPathBase + postfixH + std::to_string( iterationsList[i] ) + GetFileExtension( options.normalMapPath ) );
     }
+
     LOG( "" );
 
     return true;
@@ -206,30 +213,42 @@ int main( int argc, char** argv )
     Logger_AddLogLocation( "stdout", stdout );
     Logger_AddLogLocation( "file", "log.txt" );
 
-    //Options options = {};
-    //if ( !ParseCommandLineArgs( argc, argv, options ) )
-    //{
-    //    return 0;
-    //}
-    //Process( options );
+    Options options = {};
+    if ( !ParseCommandLineArgs( argc, argv, options ) )
+    {
+        return 0;
+    }
+    Process( options );
 
-    HeightGenMethod m = HeightGenMethod::LINEAR_SYSTEM;
+    /*
+    float slopeScale = 1.0f;
+    HeightGenMethod heightGenMethod = HeightGenMethod::RELAXATION;
+    uint32_t numIterations = 1024;
+    float iterationMultiplier = 1.0f;
+    bool outputGenNormals = true;
+    bool rangeOfIterations = false;
     std::vector<Options> options =
     {
-        //{ ROOT_DIR "normal_maps/gray_rocks_nor_dx_1k.jpg",    m, 512, 1.0f, 1.0f, false, false, true, true },
-        //{ ROOT_DIR "normal_maps/pine_bark_nor_dx_1k.png",     m, 512, 1.0f, 1.0f, false, false, true, false },
-        //{ ROOT_DIR "normal_maps/rock_wall_08_nor_dx_1k.jpg",  m, 512, 1.0f, 1.0f, false, false, true, false },
-        //{ ROOT_DIR "normal_maps/rock_wall_10_1k.png",         m, 512, 1.0f, 1.0f, false, false, true, true },
-        //{ ROOT_DIR "normal_maps/synthetic_rings_512.png",     m, 512, 1.0f, 1.0f, false, false, true, false },
-        { ROOT_DIR "normal_maps/synthetic_shapes_1_512.png",  m, 512, 1.0f, 1.0f, true, false, true, true, false },
-        //{ ROOT_DIR "normal_maps/synthetic_shapes_2_512.png",  m, 512, 1.0f, 1.0f, false, false, true, true },
-        //{ ROOT_DIR "normal_maps/synthetic_ramp_h_256.png",      m, 512, 1.0f, 1.0f, false, false, true, true },
-        //{ ROOT_DIR "normal_maps/synthetic_ramp_v_256.png",    m, 512, 1.0f, 1.0f, false, false, true, false },
+        //{ ROOT_DIR "normal_maps/gray_rocks_nor_dx_1k.jpg",   false, false },
+        //{ ROOT_DIR "normal_maps/pine_bark_nor_dx_1k.png",    false, false },
+        //{ ROOT_DIR "normal_maps/rock_wall_08_nor_dx_1k.jpg", false, false },
+        { ROOT_DIR "normal_maps/rock_wall_10_1k.png",        false, false },
+        //{ ROOT_DIR "normal_maps/synthetic_rings_512.png",    false, false },
+        //{ ROOT_DIR "normal_maps/synthetic_shapes_1_512.png", true,  false },
+        //{ ROOT_DIR "normal_maps/synthetic_ramp_h_256.png",   false, false },
     };
-    for ( const Options& option : options )
+    for ( Options option : options )
     {
+        option.slopeScale = slopeScale;
+        option.heightGenMethod = heightGenMethod;
+        option.numIterations = numIterations;
+        option.iterationMultiplier = iterationMultiplier;
+        option.outputGenNormals = outputGenNormals;
+        option.rangeOfIterations = rangeOfIterations;
+
         Process( option );
     }
+    */
 
     Logger_Shutdown();
 
